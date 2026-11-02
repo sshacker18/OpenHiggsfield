@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <vulkan/vulkan.h>
+#include <cstdio>
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_sshacker18_openhiggsfield_MainActivity_runVulkanProbe(JNIEnv* env, jclass) {
