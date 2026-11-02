@@ -105,7 +105,8 @@ jobs:
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/openhiggsfield.jks" \
             -Pandroid.injected.signing.store.password="$STORE_PASS" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASS" assembleRelease
+            -Pandroid.injected.signing.key.password="$KEY_PASS" \
+            -PVERSION_CODE="$GITHUB_RUN_NUMBER" assembleRelease bundleRelease
       - name: Upload signed APK
         if: steps.signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
@@ -114,6 +115,36 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Upload signed Android App Bundle
+        if: steps.signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhiggsfield-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+      - name: Check Google Play publishing credentials
+        id: play
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        shell: bash
+        run: |
+          if [ -n "$PLAY_JSON" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Play service account JSON missing; AAB artifact is available but not uploaded to Play."
+          fi
+      - name: Publish to Google Play internal testing
+        if: steps.signing.outputs.configured == 'true' && steps.play.outputs.configured == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.sshacker18.openhiggsfield
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
       - name: Summarize
         if: always()
         run: |
