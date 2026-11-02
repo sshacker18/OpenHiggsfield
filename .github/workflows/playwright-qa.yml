@@ -1,0 +1,60 @@
+name: Playwright QA Agent - End-to-End
+
+on:
+  workflow_run:
+    workflows: ["Development Agent - Build and Unit Checks"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/story-studio/package-lock.json
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix apps/story-studio
+          npm install --prefix apps/story-studio --save-dev @playwright/test
+      - name: Install browsers
+        run: npx --prefix apps/story-studio playwright install --with-deps chromium
+      - name: Build web studio
+        run: npm run build
+      - name: Run Playwright suite when configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f apps/story-studio/playwright.config.ts ] && [ -d apps/story-studio/e2e ]; then
+            npx --prefix apps/story-studio playwright test
+          else
+            echo "::error::Playwright agent profile exists, but the executable E2E suite has not been implemented yet."
+            exit 1
+          fi
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhiggsfield-playwright-report
+          path: |
+            apps/story-studio/playwright-report/
+            apps/story-studio/test-results/
+          if-no-files-found: warn
+          retention-days: 14
