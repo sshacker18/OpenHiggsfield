@@ -1,6 +1,13 @@
 plugins {
     id 'com.android.application'
 }
+
+def configuredVersionCode = providers.gradleProperty('VERSION_CODE').getOrElse('1').toInteger()
+def signingStoreFile = providers.gradleProperty('android.injected.signing.store.file').orNull
+def signingStorePassword = providers.gradleProperty('android.injected.signing.store.password').orNull
+def signingKeyAlias = providers.gradleProperty('android.injected.signing.key.alias').orNull
+def signingKeyPassword = providers.gradleProperty('android.injected.signing.key.password').orNull
+
 android {
     namespace 'com.sshacker18.openhiggsfield'
     compileSdk 36
@@ -8,7 +15,7 @@ android {
         applicationId 'com.sshacker18.openhiggsfield'
         minSdk 26
         targetSdk 35
-        versionCode (project.findProperty('VERSION_CODE') ?: '1').toInteger()
+        versionCode configuredVersionCode
         versionName '0.1.0'
     }
     compileOptions {
@@ -17,12 +24,11 @@ android {
     }
     signingConfigs {
         upload {
-            def keystorePath = project.findProperty('android.injected.signing.store.file')
-            if (keystorePath) {
-                storeFile file(keystorePath)
-                storePassword project.findProperty('android.injected.signing.store.password')
-                keyAlias project.findProperty('android.injected.signing.key.alias')
-                keyPassword project.findProperty('android.injected.signing.key.password')
+            if (signingStoreFile) {
+                storeFile file(signingStoreFile)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
             }
         }
     }
@@ -30,7 +36,7 @@ android {
         debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
         release {
             minifyEnabled false
-            if (project.findProperty('android.injected.signing.store.file')) signingConfig signingConfigs.upload
+            if (signingStoreFile) signingConfig signingConfigs.upload
         }
     }
     lint { abortOnError true }
