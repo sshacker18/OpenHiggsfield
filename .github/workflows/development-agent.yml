@@ -1,0 +1,40 @@
+name: Development Agent - Build and Unit Checks
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['.github/workflows/playwright-qa.yml', '.github/workflows/master-android.yml']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  development-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/story-studio/package-lock.json
+      - name: Install and build
+        run: |
+          npm ci
+          npm ci --prefix apps/story-studio
+          npm run build
+      - name: Existing unit and integration checks
+        run: |
+          npm test
+          node scripts/test-story-studio.mjs
+          node scripts/test-story-films.mjs --fal --recommended
