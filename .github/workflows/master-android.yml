@@ -35,6 +35,9 @@ jobs:
           npm ci --prefix apps/story-studio
           npm run build
           test -s apps/story-studio/dist/index.html
+          mkdir -p android/app/src/main/assets
+          cp -a apps/story-studio/dist/. android/app/src/main/assets/
+          test -s android/app/src/main/assets/index.html
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -118,7 +121,7 @@ jobs:
             echo "## OpenHiggsfield Android"
             echo "- Debug APK: built and uploaded when this job succeeds."
             echo "- Signed release APK: ${{ steps.signing.outputs.configured == 'true' && 'built' || 'not built - signing secrets required' }}"
-            echo "- Real AI generation requires a deployed HTTPS OpenHiggsfield backend and provider credentials configured in that service."
+            echo "- The Android package includes the built Story Studio UI. Live generation requires the backend and GPU/provider service to be deployed and configured."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Remove signing key
         if: always()
