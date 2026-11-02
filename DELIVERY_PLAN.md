@@ -1,42 +1,40 @@
 # OpenHiggsfield Delivery Plan
 
-This plan tracks the work required to deliver an installable Android app with a working, hosted image-to-video workflow.
+The product direction is now **offline-first, open-source, and cloud-optional**. The default app must not require a hosted backend, paid API, account, or internet connection for its core workflow. See [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md).
 
-## Phase 1 — Android build and device smoke test
+## Phase 1 — Stable Android foundation
 - [x] Package the Story Studio web build into Android assets.
-- [x] Add a standalone debug APK workflow that does not require Play Store credentials.
-- [x] Fix Gradle property resolution discovered in the first CI build.
-- [ ] Produce and verify the debug APK artifact.
-- [ ] Install on a physical Android device and smoke-test navigation, upload permissions, and media preview.
+- [x] Add a standalone debug APK workflow without Play Store credentials.
+- [x] Fix Gradle property resolution discovered in CI.
+- [ ] Produce and verify a clean debug APK.
+- [ ] Smoke-test on a physical Android device.
 
-## Phase 2 — Android app connectivity
-- [ ] Replace the file-only WebView runtime with a configurable HTTPS application origin.
-- [ ] Keep a local offline shell for diagnostics, but route authenticated API traffic to the configured backend.
-- [ ] Add safe Android file chooser handling for image uploads and camera/gallery selection.
-- [ ] Verify session persistence, upload progress, downloads, and video playback on-device.
+## Phase 2 — Offline-first Android app
+- [ ] Remove mandatory account and provider-key gates from the default app.
+- [ ] Implement Android photo picker and safe local media access.
+- [ ] Implement native MediaCodec/MediaMuxer still-image-to-MP4 rendering with motion presets.
+- [ ] Add local project save/load, render progress/cancel, preview and share.
+- [ ] Pass airplane-mode tests with zero outbound network requests.
 
-## Phase 3 — Backend deployment
-- [ ] Select and document a persistent hosting target for the Node/SQLite backend.
-- [ ] Deploy HTTPS, persistent storage, health checks, backups, and email sign-in.
-- [ ] Configure app origin, authentication secret, allowed signup policy, and email delivery.
-- [ ] Verify account/workspace isolation and encrypted provider credential storage in the deployed environment.
+## Phase 3 — Local AI inference (optional)
+- [ ] Add a private-LAN/localhost ComfyUI connector; no hosted endpoints by default.
+- [ ] Add pairing, local-only endpoint validation, job submission/polling and result transfer.
+- [ ] Select Wan 2.2 or a smaller compatible open model only after checking device/workstation hardware and model license.
+- [ ] Verify a real end-to-end run against a user's own local ComfyUI installation.
+- [ ] Keep app fully usable when no local AI workstation is available.
 
-## Phase 4 — Image-to-video generation
-- [ ] Preserve the existing fal and Higgsfield adapters.
-- [ ] Add a ComfyUI-compatible adapter for a user-provided reachable ComfyUI endpoint and workflow.
-- [ ] Define and validate the supported Wan workflow, model files, input image, prompt, output video, and job polling.
-- [ ] Run a real end-to-end generation and verify clip assembly and download.
+## Phase 4 — Quality and release
+- [ ] Add unit, UI, native-renderer and offline integration tests.
+- [ ] Run APK build, install, export and media playback checks.
+- [ ] Review dependency licenses, permissions, privacy, and security.
+- [ ] Prepare signed AAB and Play Store configuration only when requested.
 
-**Important:** Wan weights may be open source, but inference still requires an accessible GPU host. This repository cannot create free GPU capacity by itself. The Android phone is a client, not the inference machine.
+## Explicit non-goals
+- No mandatory Render/Railway/Vercel backend.
+- No fal, Higgsfield, OpenRouter, or other paid provider in the default path.
+- No cloud storage, hosted database, analytics, telemetry, or compulsory sign-in.
+- No claim that a motion preset is generative AI.
+- No claim that a 4 GB phone can run a large video diffusion model locally.
 
-## Phase 5 — QA, release, and Play Store
-- [ ] Add deterministic backend/API and UI regression coverage; make CI fail on real test failures.
-- [ ] Run Android debug and release builds, inspect package identity, permissions, and app behavior.
-- [ ] Configure the upload keystore and Play Console service-account credentials as repository secrets.
-- [ ] Publish an internal-testing AAB, validate installation/update behavior, then prepare production release.
-
-## External inputs that cannot be fabricated
-- A persistent backend hosting account/project and domain or service URL.
-- For Wan/ComfyUI: a reachable GPU host, ComfyUI endpoint, and compatible workflow/model setup.
-- For paid fal/Higgsfield: the user's provider API credentials and billing account.
-- For Play Store: Play Console app registration and a service account authorized for this package.
+## Hardware constraint
+Open-source weights do not eliminate inference compute. The 4 GB Android target can run the offline motion renderer; large video diffusion models require a suitable local GPU workstation. The app must explain this and must never silently upload user media to a cloud provider.
