@@ -11,12 +11,16 @@ def signingKeyPassword = providers.gradleProperty('android.injected.signing.key.
 android {
     namespace 'com.sshacker18.openhiggsfield'
     compileSdk 36
+    externalNativeBuild {
+        cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" }
+    }
     defaultConfig {
         applicationId 'com.sshacker18.openhiggsfield'
         minSdk 26
         targetSdk 35
         versionCode configuredVersionCode
         versionName '0.1.0'
+        externalNativeBuild { cmake { cppFlags "-std=c++17" } }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
