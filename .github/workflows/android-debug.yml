@@ -1,0 +1,67 @@
+name: OpenHiggsfield - Local Debug APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openhiggsfield-debug-apk
+  cancel-in-progress: true
+
+jobs:
+  debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/story-studio/package-lock.json
+      - name: Build Story Studio web assets
+        run: |
+          npm ci
+          npm ci --prefix apps/story-studio
+          npm run build
+          test -s apps/story-studio/dist/index.html
+          mkdir -p android/app/src/main/assets
+          cp -a apps/story-studio/dist/. android/app/src/main/assets/
+          test -s android/app/src/main/assets/index.html
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: latest
+          packages: platform-tools
+      - name: Install Android SDK
+        run: |
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.6'
+      - name: Compile debug APK
+        working-directory: android
+        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Verify APK
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep "package: name='com.sshacker18.openhiggsfield.debug'"
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhiggsfield-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
