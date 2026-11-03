@@ -1,6 +1,7 @@
 package com.sshacker18.openhiggsfield;
 
 import android.app.Activity;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
@@ -66,7 +67,7 @@ public final class MainActivity extends Activity {
             @SuppressWarnings("deprecation")
             public android.webkit.WebResourceResponse shouldInterceptRequest(
                     WebView view, String url) {
-                return assetLoader.shouldInterceptRequest(url);
+                return assetLoader.shouldInterceptRequest(Uri.parse(url));
             }
 
             @Override
